@@ -1,4 +1,5 @@
 ﻿using CardsTools.Data.Managers;
+using CardsTools.Data.Managers.MenuManager;
 using CardsTools.Data.Models;
 using Serilog.Sinks.SystemConsole.Themes;
 using Serilog;
@@ -10,15 +11,25 @@ namespace CardsTools
         static CardManager manager = CardManager.GetInstance();
         static void Main(string[] args)
         {
-            manager.AddCard(new Card() { Id = 0, Name = "Шут" });
-            manager.AddCard(new Card() { Id = 1, Name = "Треф" });
-            manager.AddCard(new Card() { Id = 2, Name = "Червы" });
-            manager.AddCard(new Card() { Id = 3, Name = "Бубны" });
-            List<Card> cardCollection = manager.GetCards();
-            foreach (var card in cardCollection)
+
+            var mm = new Menu("Главное меню")
             {
-                Console.WriteLine($"{card.Id} - {card.Name}");
-            }
+                new Menu("Управление колодами")
+                {
+
+                    new MenuItem("Создать колоду", (sender, args) => {
+                        System.Console.WriteLine("Тут создается колода :)");
+                    }),
+                    new MenuItem("Перемешать", (sender, args) => {
+                        System.Console.WriteLine("Перемашали колоду что жопа тресятеся :)");
+                    }),
+                    new MenuItem("Выйти", (sender, args) => {
+                        var thisItem = ((IMenuItem) sender);
+                        thisItem.Root.Stop();
+                    })
+                }
+            };
+            mm.Run();
         }
         
     }
