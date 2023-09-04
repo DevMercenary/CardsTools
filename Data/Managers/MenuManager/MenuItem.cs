@@ -8,11 +8,11 @@ namespace CardsTools.Data.Managers.MenuManager
 {
     public class MenuItem : IMenuItem
     {
-        public MenuItem(string header = "<insert header>", EventHandler<ArgumentActionExecutionEvent>? actionToPerform = null)
+        public MenuItem(string header = "<insert header>", EventHandler<ArgumentActionExecutionEvent>? actionToExecute = null)
         {
             Header = header;
-            if (actionToPerform != null)
-                ActionToExecute += actionToPerform;
+            if (actionToExecute != null)
+                ActionToExecute += actionToExecute;
         }
         public IMenu RootMenu
         {
