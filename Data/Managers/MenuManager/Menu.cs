@@ -185,9 +185,9 @@ namespace CardsTools.Data.Managers.MenuManager
             return true;
         }
 
-        public bool AddItem(string caption = "<insert header>", EventHandler<ArgumentActionExecutionEvent> actionToPerform = default, object? tag = default)
+        public bool AddItem(string header = "<insert header>", EventHandler<ArgumentActionExecutionEvent> actionToExecute = default, object? tag = default)
         {
-            var menuItem = new MenuItem(caption, actionToPerform) { MenuItemObject = null };
+            var menuItem = new MenuItem(header, actionToExecute) { MenuItemObject = null };
             return AddItem(menuItem);
         }
 

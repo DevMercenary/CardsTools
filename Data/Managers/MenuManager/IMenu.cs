@@ -16,7 +16,7 @@ namespace CardsTools.Data.Managers.MenuManager
         int ExecuteAction(int numItem, ConsoleKeyInfo input, params object[] args);
         bool AddMenu(string title);
         bool AddItem(IMenuItem? item);
-        bool AddItem(string caption, EventHandler<ArgumentActionExecutionEvent> actionToPerform = default, object? tag = default);
+        bool AddItem(string header, EventHandler<ArgumentActionExecutionEvent> actionToExecute = default, object? tag = default);
         bool RemoveItem(IMenuItem? item);
         void Clear();
         int SelectedIndex { get; }
