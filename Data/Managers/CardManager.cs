@@ -4,6 +4,8 @@ using Serilog;
 using Serilog.Core;
 using Serilog.Sinks.SystemConsole.Themes;
 
+using System.Xml.Linq;
+
 namespace CardsTools.Data.Managers
 {
     internal class CardManager : Keeper
@@ -12,7 +14,6 @@ namespace CardsTools.Data.Managers
         {
             Logger = new LoggerConfiguration().WriteTo.Console(theme: AnsiConsoleTheme.Literate).CreateLogger();
             AllCardsList = new List<DeskOfCards>();
-            ActiveCardsCollection = new DeskOfCards("Empty");
         }
         public static CardManager GetInstance()
         {
@@ -36,7 +37,7 @@ namespace CardsTools.Data.Managers
             var cardCollection = AllCardsList.FirstOrDefault(cards => cards.Name == name);
             if (cardCollection != null)
             {
-                ActiveCardsCollection.Cards = cardCollection.Cards;
+                ActiveCardsCollection = cardCollection;
                 Logger.Information($"Активная колода {name}.");
             }
             else
@@ -45,10 +46,59 @@ namespace CardsTools.Data.Managers
             }
             
         }
-
-        internal void CreateNewCardsDesk(string? v)
+        public void Import(string path)
         {
-            AllCardsList.Add(new DeskOfCards(v));
+            var deskImport = OpenDeskCardToStorage(path) ?? throw new InvalidOperationException();
+            var cardCollection = AllCardsList.FirstOrDefault(cards => cards.Name == deskImport.Name);
+            if (cardCollection == null)
+            {
+                AllCardsList.Add(deskImport);
+                Logger.Information($"Колода {deskImport.Name} успешно ипортирована.");
+            }
+            else
+            {
+                Logger.Warning($"Колода с  именем {deskImport.Name} уже существует.");
+                AllCardsList.Add(deskImport);
+                deskImport.Name += $"_Backup_{DateTime.Now.ToLongTimeString()}";
+                Logger.Information($"Имя колоды изменено {deskImport.Name} успешно ипортирована.");
+            }
         }
+        internal void CreateNewCardsDesk(string name)
+        {
+            var cardCollection = AllCardsList.FirstOrDefault(cards => cards.Name == name);
+            if (cardCollection == null)
+            {
+                AllCardsList.Add(new DeskOfCards(name));
+                Logger.Information($"Колода {name} успешно создана.");
+            }
+            else
+            {
+                Logger.Error($"Колода с  именем {name} уже существует.");
+            }
+
+        }
+
+        internal bool RenameDeskCard(string newName)
+        {
+            var cardCollection = AllCardsList.FirstOrDefault(cards => cards.Name == newName);
+            if (cardCollection == null)
+            {
+                ActiveCardsCollection.Rename(newName);
+                Logger.Information($"Колода {newName} успешно переименована.");
+                return true;
+            }
+            else
+            {
+                Logger.Error($"Колода с  именем {newName} уже существует.");
+                return false;
+            }
+        }
+        internal void RemoveDeskCard()
+        {
+            AllCardsList.Remove(ActiveCardsCollection);
+            ActiveCardsCollection = null;
+        }
+
+
     }
 }

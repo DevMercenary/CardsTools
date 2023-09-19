@@ -27,13 +27,12 @@ namespace CardsTools.Data.Models
             OnSortedDeskNotify += () =>
             {
                 IsSorted = true;
-                _logger.Information($"Значение IsSorted: {IsSorted}");
             };
         }
 
         public List<Card> Cards = new();
         public string Name { get; set; }
-        public bool IsSorted { get; private set; }
+        public bool IsSorted { get; set; }
         private Random _random;
         public void Display()
         {
@@ -44,7 +43,7 @@ namespace CardsTools.Data.Models
                 _logger.Information($"Карты: {Cards.Count} шт.");
                 foreach (Card card in Cards)
                 {
-                    _logger.Information($"{card.Id} - {card.Name}");
+                    _logger.Information($"ID: {card.Id} Название: {card.Name} Сила  карты: {card.CardPower} Описание: {card.Description}");
                 }
             }
             else
@@ -60,7 +59,8 @@ namespace CardsTools.Data.Models
                 _logger.Information("В колоде нет карт.");
                 return;
             }
-            var orderByDescending = Cards.OrderByDescending(p => p.Id);
+            var orderByDescending = Cards.OrderBy(p => p.Id);
+            Cards = orderByDescending.ToList();
             OnSortedDeskNotify.Invoke();
             _logger.Information("Колода отсортирована по порядку.");
         }
@@ -72,6 +72,7 @@ namespace CardsTools.Data.Models
                 return;
             }
             var orderByDescending = Cards.OrderByDescending(p => p.CardPower);
+            Cards = orderByDescending.ToList();
             OnSortedDeskNotify.Invoke();
             _logger.Information("Колода отсортирована по силе.");
         }
@@ -91,11 +92,7 @@ namespace CardsTools.Data.Models
                 (Cards[r], Cards[x]) = (Cards[x], Cards[r]);
             }
             OnSortedDeskNotify.Invoke();
-            _logger.Information("Колода отсортирована случайно:");
-            foreach (var card in Cards)
-            {
-                _logger.Information($"Id: {card.Id} Название: {card.Name} Сила: {card.CardPower}");
-            }
+            _logger.Information("Колода отсортирована случайно.");
         }
 
         public void ClearCard()
@@ -129,7 +126,10 @@ namespace CardsTools.Data.Models
                 _logger.Error($"Карта с  именем {name} не найдена.");
             }
         }
-
+        public void Rename(string newName)
+        {
+            Name = newName;
+        }
         private bool IsDeskCardsFull(List<Card> cards)
         {
             return cards.Count == 100;

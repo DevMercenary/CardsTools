@@ -1,4 +1,5 @@
-﻿using CardsTools.Data.Managers;
+﻿using System.ComponentModel.Design;
+using CardsTools.Data.Managers;
 using CardsTools.Data.Managers.MenuManager;
 using CardsTools.Data.Models;
 using Serilog.Sinks.SystemConsole.Themes;
@@ -14,19 +15,41 @@ namespace CardsTools
         static Menu _mainMenu = new Menu("Главное меню");
         static Menu _cardsPackMenu = new Menu("Все колоды");
         static Menu _cardDeskMenu = new Menu("Меню колоды");
+        static Menu _cardDeskLoads = new Menu("Сохраненые колоды");
         static Menu _concretDeskCardMenu = new Menu("Операции с колодой: ");
 
         static void Main(string[] args)
         {
             _mainMenu.AddMenu("Колоды карт");
             IMenu cardsMenu = ((IMenu)_mainMenu[0]);
-            cardsMenu.AddItem("Создать колоду", ActionCreateCardsPack);
             cardsMenu.AddItem("Все колоды", PrintMenuToDeskCard);
             _mainMenu.AddItem(new MenuItem("Выйти", (sender, @event) =>
             {
                 var item = (MenuItem)sender;
                 item.Root.Stop();
             }));
+            cardsMenu.AddItem("Создать колоду", ActionCreateCardsPack);
+            cardsMenu.AddItem("Импорт колоды", (sender, @event) =>
+            {
+                _mainMenu.Stop();
+                Console.Clear();
+                _cardDeskLoads.Clear();
+                _cardDeskLoads.AddItem("Назад", (senderChild, @event) =>
+                {
+                    var item = (MenuItem)senderChild;
+                    item.Root.Stop();
+                    Console.Clear();
+                    _mainMenu.Run();
+                });
+                foreach (var filename in FileHelper.ReadFiles())
+                {
+                    _cardDeskLoads.AddItem(filename, (o, executionEvent) =>
+                    {
+                        _manager.Import(filename);
+                    });
+                }
+                _cardDeskLoads.Run();
+            });
             _mainMenu.Run();
         }
 
@@ -41,7 +64,7 @@ namespace CardsTools
                 {
                     _manager.ChoseActiveCardDesk(card.Name);
                     Console.WriteLine("Обработка колоды");
-                    Thread.Sleep(1500);
+                    Thread.Sleep(500);
                     _cardDeskMenu.Stop();
                     Console.Clear();
                     _concretDeskCardMenu.Clear();
@@ -99,6 +122,44 @@ namespace CardsTools
                         _manager.ActiveCardsCollection.CardDeskRandomSort();
 
                     });
+                    _concretDeskCardMenu.AddItem("Переименовать колоду", (sender1, executionEvent) =>
+                    {
+                        Console.Write("Введите название колоды: ");
+                        var deskName = Console.ReadLine();
+                        if (ValidationCard.IsStringNull(deskName))
+                        {
+                            _manager.Logger.Error("Название колоды, не может быть пустым. Отмена создание карты.");
+                            return;
+                        }
+                        if(_manager.RenameDeskCard(deskName))
+                        {
+                            var item = (MenuItem)sender1;
+                            item.Root.Stop();
+                            Console.Clear();
+                            _mainMenu.Run();
+                        }
+
+                    });
+                    _concretDeskCardMenu.AddItem("Удалить колоду", (sender1, executionEvent) =>
+                    {
+                        Console.Write("Нажмите Y для удаления, любую другую для отмены: ");
+                        ConsoleKeyInfo inputKey = Console.ReadKey();
+                        switch (inputKey.Key)
+                        {
+                            case ConsoleKey.Y:
+                                var item = (MenuItem) sender1;
+                                item.Root.Stop();
+                                Console.Clear();
+                                _cardDeskMenu.Clear();
+                                _manager.RemoveDeskCard();
+                                _mainMenu.Run();
+                                break;
+                            default:
+                                _manager.Logger.Information("Отмена удаления колоды.");
+                                break;
+                        }
+                    });
+                    _concretDeskCardMenu.AddItem("Экспорт колоды (.json)", (sender1, executionEvent) => _manager.SaveDeskCardToStorage(_manager.ActiveCardsCollection));
                     _concretDeskCardMenu.AddItem("Назад", (senderChild, @event) =>
                     {
                         var item = (MenuItem)senderChild;
