@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CardsTools.Data.Managers.MenuManager
 {
@@ -12,23 +7,23 @@ namespace CardsTools.Data.Managers.MenuManager
     {
         public IMenuItem this[Index index]
         {
-            get => _subItems[index] ?? throw new InvalidOperationException();
-            set => _subItems[index] = value;
+            get => SubItems[index] ?? throw new InvalidOperationException();
+            set => SubItems[index] = value;
         }
 
         public IMenuItem this[int index]
         {
-            get => _subItems[index] ?? throw new InvalidOperationException();
-            set => _subItems[index] = value;
+            get => SubItems[index] ?? throw new InvalidOperationException();
+            set => SubItems[index] = value;
         }
 
         public IMenuItem this[object itemObj]
         {
-            get => _subItems.First(item => item?.MenuItemObject == itemObj) ?? throw new InvalidOperationException();
+            get => SubItems.First(item => item?.MenuItemObject == itemObj) ?? throw new InvalidOperationException();
             set
             {
-                var index = _subItems.FindIndex(item => item?.MenuItemObject == itemObj);
-                _subItems[index] = value;
+                var index = SubItems.FindIndex(item => item?.MenuItemObject == itemObj);
+                SubItems[index] = value;
             }
         }
 
@@ -52,7 +47,7 @@ namespace CardsTools.Data.Managers.MenuManager
         {
             _running = true;
             _isRoot = true;
-            _positionZero = new Point(Console.CursorLeft, Console.CursorTop + 1);
+            PositionZero = new Point(Console.CursorLeft, Console.CursorTop + 1);
             ShowMenu(Items.Count);
             _isRoot = false;
         }
@@ -67,11 +62,11 @@ namespace CardsTools.Data.Managers.MenuManager
             }
         }
 
-        public IMenu RootMenu
+        public IMenu? RootMenu
         {
             get
             {
-                IMenu result;
+                IMenu? result;
                 for (result = this; result.Root != null; result = result.Root) { }
                 return result;
             }
@@ -80,18 +75,18 @@ namespace CardsTools.Data.Managers.MenuManager
         public string Header { get; set; }
         public object? MenuItemObject { get; set; }
 
-        protected static Point _defaultConsoleLocation;
-        protected int _actionPerformedEndRow = -1;
+        protected static Point DefaultConsoleLocation;
+        protected int ActionPerformedEndRow = -1;
         private bool _running;
-        protected static Point _positionZero = new(Console.CursorLeft, Console.CursorTop + 1);
+        protected static Point PositionZero = new(Console.CursorLeft, Console.CursorTop + 1);
 
-        public bool RemoveItem(IMenuItem? item) => _subItems.Remove(item);
+        public bool RemoveItem(IMenuItem? item) => SubItems.Remove(item);
 
-        public void Clear() => _subItems.Clear();
+        public void Clear() => SubItems.Clear();
 
         public int SelectedIndex { get; private set; } = -1;
 
-        public IMenuItem? SelectedItem => SelectedIndex < 0 || SelectedIndex >= _subItems.Count ? _subItems[SelectedIndex] : null;
+        public IMenuItem? SelectedItem => SelectedIndex < 0 || SelectedIndex >= SubItems.Count ? SubItems[SelectedIndex] : null;
         public event EventHandler<ArgumentActionExecutionEvent>? ArgumentActionExecution;
         public event EventHandler<ArgumentActionExecutionEvent>? ArgumentActionExecuted;
 
@@ -126,8 +121,8 @@ namespace CardsTools.Data.Managers.MenuManager
             directories.Reverse();
             return directories;
         }
-        protected readonly List<IMenuItem?> _subItems = new();
-        public IReadOnlyList<IMenuItem?> Items => _subItems.AsReadOnly();
+        protected readonly List<IMenuItem?> SubItems = new();
+        public IReadOnlyList<IMenuItem?> Items => SubItems.AsReadOnly();
         public virtual (MenuPoint, int) ShowMenu(int previousLines = -1)
         {
             if (!Running) return (MenuPoint.Quit, -1);
@@ -149,19 +144,19 @@ namespace CardsTools.Data.Managers.MenuManager
         {
             ClearPerformedLines();
             Console.CursorVisible = true;
-            var subItem = _subItems[numItem];
+            var subItem = SubItems[numItem];
             subItem?.ActionExecute(userInput, Items.Count, args);
             Console.CursorVisible = false;
-            _actionPerformedEndRow = Console.CursorTop;
+            ActionPerformedEndRow = Console.CursorTop;
             if (subItem is IMenu m) return m.Items.Count;
             return -1;
 
         }
         private void ClearPerformedLines()
         {
-            if (_actionPerformedEndRow == -1) return;
+            if (ActionPerformedEndRow == -1) return;
             var curr = Console.CursorTop;
-            for (var i = 0; i < _actionPerformedEndRow - curr + 1; i++)
+            for (var i = 0; i < ActionPerformedEndRow - curr + 1; i++)
             {
                 ClearCurrentConsoleLine();
                 Console.WriteLine();
@@ -175,17 +170,17 @@ namespace CardsTools.Data.Managers.MenuManager
         }
         public bool AddItem(IMenuItem? item)
         {
-            if (item == null || !item.IsValid(_subItems))
+            if (item == null || !item.IsValid(SubItems))
             {
                 return false;
             }
 
             item.Root = this;
-            _subItems.Add(item);
+            SubItems.Add(item);
             return true;
         }
 
-        public bool AddItem(string header = "<insert header>", EventHandler<ArgumentActionExecutionEvent> actionToExecute = default, object? tag = default)
+        public bool AddItem(string header = "<insert header>", EventHandler<ArgumentActionExecutionEvent>? actionToExecute = default, object? tag = default)
         {
             var menuItem = new MenuItem(header, actionToExecute) { MenuItemObject = null };
             return AddItem(menuItem);
@@ -199,13 +194,13 @@ namespace CardsTools.Data.Managers.MenuManager
             CustomWriteLine();
             PrintPrettyDir();
             CustomWriteLine();
-            _defaultConsoleLocation = new Point(Console.CursorLeft, Console.CursorTop);
+            DefaultConsoleLocation = new Point(Console.CursorLeft, Console.CursorTop);
         }
 
         private void ResetPosition()
         {
-            Console.CursorTop = _positionZero.Y;
-            Console.CursorLeft = _positionZero.X;
+            Console.CursorTop = PositionZero.Y;
+            Console.CursorLeft = PositionZero.X;
         }
 
         private void CustomWriteLine(object? s = null)
@@ -224,7 +219,7 @@ namespace CardsTools.Data.Managers.MenuManager
                     @int = ExecuteAction(SelectedIndex, answer, Args);
                     break;
                 case MenuPoint.Quit:
-                    Root.Stop();
+                    Root?.Stop();
                     break;
                 case MenuPoint.Up:
                     int max = Items.Count == 0 ? 0 : Items.Count - 1, min = 0;
@@ -278,8 +273,8 @@ namespace CardsTools.Data.Managers.MenuManager
         protected void PrintItems(Point consolePosition, int previousLines)
         {
             Console.CursorVisible = false;
-            Console.SetCursorPosition(0, _defaultConsoleLocation.Y);
-            var max = previousLines > _subItems.Count ? previousLines : _subItems.Count;
+            Console.SetCursorPosition(0, DefaultConsoleLocation.Y);
+            var max = previousLines > SubItems.Count ? previousLines : SubItems.Count;
             const string format = "> ";
             for (var i = 0; i < max; i++)
             {
@@ -290,9 +285,9 @@ namespace CardsTools.Data.Managers.MenuManager
                     Console.ForegroundColor = ConsoleColor.Black;
                     Console.Write(format);
                 }
-                if (i < _subItems.Count)
+                if (i < SubItems.Count)
                 {
-                    Console.Write($"(#{i + 1}) - {_subItems[i].Header} ");
+                    Console.Write($"(#{i + 1}) - {SubItems[i]?.Header} ");
                     if (i != SelectedIndex)
                         Console.Write($"{string.Join("", Enumerable.Repeat(" ", format.Length))}");
                     Console.WriteLine();
@@ -314,7 +309,7 @@ namespace CardsTools.Data.Managers.MenuManager
         }
 
         /// <inheritdoc />
-        public IEnumerator<IMenuItem> GetEnumerator() => _subItems.GetEnumerator();
+        public IEnumerator<IMenuItem> GetEnumerator() => SubItems.GetEnumerator();
 
         /// <inheritdoc />
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

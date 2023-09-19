@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace CardsTools.Data.Managers.MenuManager
+﻿namespace CardsTools.Data.Managers.MenuManager
 {
     public interface IMenu : IMenuItem, IEnumerable<IMenuItem>
     {
@@ -16,7 +10,7 @@ namespace CardsTools.Data.Managers.MenuManager
         int ExecuteAction(int numItem, ConsoleKeyInfo input, params object[] args);
         bool AddMenu(string title);
         bool AddItem(IMenuItem? item);
-        bool AddItem(string header, EventHandler<ArgumentActionExecutionEvent> actionToExecute = default, object? tag = default);
+        bool AddItem(string header, EventHandler<ArgumentActionExecutionEvent>? actionToExecute = default, object? tag = default);
         bool RemoveItem(IMenuItem? item);
         void Clear();
         int SelectedIndex { get; }

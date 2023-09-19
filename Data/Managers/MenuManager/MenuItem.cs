@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace CardsTools.Data.Managers.MenuManager
+﻿namespace CardsTools.Data.Managers.MenuManager
 {
     public class MenuItem : IMenuItem
     {
@@ -14,12 +8,12 @@ namespace CardsTools.Data.Managers.MenuManager
             if (actionToExecute != null)
                 ActionToExecute += actionToExecute;
         }
-        public IMenu RootMenu
+        public IMenu? RootMenu
         {
             get
             {
-                IMenu result;
-                for (result = Root; result.Root != null; result = result.Root) { }
+                IMenu? result;
+                for (result = Root; result?.Root != null; result = result.Root) { }
                 return result;
             }
         }

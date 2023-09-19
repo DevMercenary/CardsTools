@@ -1,10 +1,8 @@
 ﻿using CardsTools.Data.Models;
-using CardsTools.Data.Tools;
+
 using Serilog;
 using Serilog.Core;
 using Serilog.Sinks.SystemConsole.Themes;
-
-using System.Xml.Linq;
 
 namespace CardsTools.Data.Managers
 {
@@ -13,13 +11,14 @@ namespace CardsTools.Data.Managers
         private CardManager()
         {
             Logger = new LoggerConfiguration().WriteTo.Console(theme: AnsiConsoleTheme.Literate).CreateLogger();
-            AllCardsList = new List<DeskOfCards>();
+            AllCardsList = new List<DeskOfCards?>();
         }
         public static CardManager GetInstance()
         {
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
             if (_instance == null)
             {
-                lock (syncRoot)
+                lock (_syncRoot)
                 {
                     if (_instance == null)
                         _instance = new CardManager();
@@ -27,14 +26,14 @@ namespace CardsTools.Data.Managers
             }
             return _instance;
         }
-        private static CardManager _instance;
-        private static object syncRoot = new Object();
+        private static CardManager? _instance;
+        private static object _syncRoot = new Object();
         public Logger Logger;
-        public DeskOfCards ActiveCardsCollection { get; set; }
-        public List<DeskOfCards> AllCardsList { get; set; }
+        public DeskOfCards? ActiveCardsCollection { get; set; }
+        public List<DeskOfCards?> AllCardsList { get; set; }
         public void ChoseActiveCardDesk(string name)
         {
-            var cardCollection = AllCardsList.FirstOrDefault(cards => cards.Name == name);
+            var cardCollection = AllCardsList.FirstOrDefault(cards => cards?.Name == name);
             if (cardCollection != null)
             {
                 ActiveCardsCollection = cardCollection;
@@ -44,12 +43,12 @@ namespace CardsTools.Data.Managers
             {
                 Logger.Error($"Колода с  именем {name} не найдена.");
             }
-            
+
         }
         public void Import(string path)
         {
             var deskImport = OpenDeskCardToStorage(path) ?? throw new InvalidOperationException();
-            var cardCollection = AllCardsList.FirstOrDefault(cards => cards.Name == deskImport.Name);
+            var cardCollection = AllCardsList.FirstOrDefault(cards => cards?.Name == deskImport.Name);
             if (cardCollection == null)
             {
                 AllCardsList.Add(deskImport);
@@ -65,7 +64,7 @@ namespace CardsTools.Data.Managers
         }
         internal void CreateNewCardsDesk(string name)
         {
-            var cardCollection = AllCardsList.FirstOrDefault(cards => cards.Name == name);
+            var cardCollection = AllCardsList.FirstOrDefault(cards => cards?.Name == name);
             if (cardCollection == null)
             {
                 AllCardsList.Add(new DeskOfCards(name));
@@ -80,10 +79,10 @@ namespace CardsTools.Data.Managers
 
         internal bool RenameDeskCard(string newName)
         {
-            var cardCollection = AllCardsList.FirstOrDefault(cards => cards.Name == newName);
+            var cardCollection = AllCardsList.FirstOrDefault(cards => cards?.Name == newName);
             if (cardCollection == null)
             {
-                ActiveCardsCollection.Rename(newName);
+                ActiveCardsCollection?.Rename(newName);
                 Logger.Information($"Колода {newName} успешно переименована.");
                 return true;
             }
