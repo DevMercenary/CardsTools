@@ -10,11 +10,11 @@
 
 | # | Название            | Версия    |
 |---|--------------------------|-----------|
-| 1 | Newtonsoft.Json          | 13.0.3    |
-| 2 | Serilog                  | 3.0.1     |
-| 3 | Serilog.Formatting.Compact| 1.1.0     |
-| 4 | Serilog.Sinks.Console    | 4.1.0     |
-| 5 | Платформа .NET           | 7.0       |
+| 1 | [Newtonsoft.Json](https://www.newtonsoft.com/json)          | 13.0.3    |
+| 2 | [Serilog](https://serilog.net/)                  | 3.0.1     |
+| 3 | [Serilog.Formatting.Compact](https://github.com/serilog/serilog-formatting-compact)| 1.1.0     |
+| 4 | [Serilog.Sinks.Console](https://github.com/serilog/serilog-sinks-console)    | 4.1.0     |
+| 5 | [Платформа .NET](https://dotnet.microsoft.com/en-us/download/dotnet/7.0)           | 7.0       |
 
 ## Функциональность
 
