@@ -99,9 +99,18 @@ namespace CardsTools.Data.Models
             }
             else
             {
-                int id = Cards.Count;
-                Cards.Add(new Card() { Name = name, Id = id, CardPower = power, Description = description });
-                _logger.Information($"Карта {name} успешно добавлена её индентификатор {id}.");
+                var card = Cards.FirstOrDefault(cards => cards?.Name == name);
+                if (card == null)
+                {
+                    int id = Cards.Count;
+                    Cards.Add(new Card() { Name = name, Id = id, CardPower = power, Description = description });
+                    _logger.Information($"Карта {name} успешно добавлена её индентификатор {id}.");
+                }
+                else
+                {
+                    _logger.Error($"Карта с  именем {name} уже существует.");
+                }
+
             }
         }
 
