@@ -8,11 +8,13 @@
 
 Для сборки и запуска приложения необходимы следующие пакеты и технологии:
 
-1. [Newtonsoft.Json](https://www.newtonsoft.com/json) Version="13.0.3"
-2. [Serilog](https://serilog.net/) Version="3.0.1"
-3. [Serilog.Formatting.Compact](https://github.com/serilog/serilog-formatting-compact) Version="1.1.0"
-4. [Serilog.Sinks.Console](https://github.com/serilog/serilog-sinks-console) Version="4.1.0"
-5. Платформа .NET 7.0
+| # | Название пакета            | Версия    |
+|---|--------------------------|-----------|
+| 1 | Newtonsoft.Json          | 13.0.3    |
+| 2 | Serilog                  | 3.0.1     |
+| 3 | Serilog.Formatting.Compact| 1.1.0     |
+| 4 | Serilog.Sinks.Console    | 4.1.0     |
+| 5 | Платформа .NET           | 7.0       |
 
 ## Функциональность
 
