@@ -1,4 +1,4 @@
-﻿using CardsTools.Data.Models;
+using CardsTools.Data.Models;
 
 using Serilog;
 using Serilog.Core;

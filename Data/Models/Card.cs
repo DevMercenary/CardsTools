@@ -1,4 +1,4 @@
-﻿namespace CardsTools.Data.Models
+namespace CardsTools.Data.Models
 {
     public class Card
     {

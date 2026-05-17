@@ -1,4 +1,4 @@
-﻿namespace CardsTools.Data.Managers.MenuManager
+namespace CardsTools.Data.Managers.MenuManager
 {
     public interface IMenuItem
     {

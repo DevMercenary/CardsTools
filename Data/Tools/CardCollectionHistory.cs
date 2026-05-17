@@ -1,4 +1,4 @@
-﻿namespace CardsTools.Data.Tools
+namespace CardsTools.Data.Tools
 {
     internal class CardCollectionHistory
     {

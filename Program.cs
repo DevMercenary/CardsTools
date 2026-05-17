@@ -1,4 +1,4 @@
-﻿using CardsTools.Data.Managers;
+using CardsTools.Data.Managers;
 using CardsTools.Data.Managers.MenuManager;
 using CardsTools.Data.Tools;
 

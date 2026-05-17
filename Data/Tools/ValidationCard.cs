@@ -1,4 +1,4 @@
-﻿namespace CardsTools.Data.Tools
+namespace CardsTools.Data.Tools
 {
     public static class ValidationCard
     {

@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Drawing;
 
 namespace CardsTools.Data.Managers.MenuManager
