@@ -2,7 +2,7 @@
 
 # CardsTools
 
-**A console application for managing playing- and divination-card decks**
+**A console deck manager — DI Host, Command pattern, real Memento undo/redo**
 
 [![CI](https://github.com/DevMercenary/CardsTools/actions/workflows/ci.yml/badge.svg)](https://github.com/DevMercenary/CardsTools/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -14,40 +14,65 @@
 
 ---
 
-A small, interactive console application that lets you create, edit and import/export
-decks of cards. The project was originally a sandbox for practising object-oriented
-design and grew into a portfolio piece showcasing a hand-rolled console menu framework,
-the Memento pattern for undo/redo, and Serilog-based logging.
+A small interactive console application that lets you build, edit, persist and replay
+decks of playing- or divination-cards. The project started as a sandbox for OOP and
+grew into a portfolio piece showing how the same domain can be expressed cleanly with
+DI, Command pattern, Memento and source-generated APIs.
 
-## What it does
+## What is showcased
 
-- Create, rename and delete decks of cards.
-- Add, remove, list and sort cards inside a deck (by id, by power, randomly).
-- Persist decks to disk as JSON, plus automatic timestamped backups.
-- Import previously exported decks (with auto-renaming on conflict).
-- Drive everything from a keyboard-navigable nested menu.
+- **Generic Host + DI** — `Host.CreateApplicationBuilder` with everything resolved
+  through the container; no `Singleton` patterns anywhere.
+- **`IHostedService`** drives the console loop with cooperative shutdown on Ctrl-C.
+- **Declarative menu DSL** — `MenuBuilder.Root(...)` fluently composes the menu tree
+  on top of the existing `IMenu`/`IMenuItem` framework.
+- **Command pattern** — every destructive operation (`AddCardCommand`,
+  `RemoveCardCommand`, `SortByPowerCommand`, …) implements `IDeckCommand` and goes
+  through a `CommandRunner` that snapshots a memento before applying.
+- **Real Undo/Redo via Memento** — `DeckHistory` (two-stack) lets users walk forward
+  and back through their edits; failed commands roll their memento back automatically.
+- **System.Text.Json source-generated** persistence — no reflection at runtime,
+  AOT-friendly serialisation via `[JsonSerializable]` + `JsonSerializerContext`.
+- **`[LoggerMessage]` source generator** for allocation-free structured logs.
+- **Sealed records** (`Card`, `CardsMemento`, `DeckSnapshot`) for invariant-preserving
+  immutable data.
+- **xUnit + FluentAssertions** test suite (21 tests covering deck invariants,
+  history, command runner, manager and menu builder).
 
-## Architecture & patterns
+## Project layout
 
-The codebase is small enough to read top-to-bottom yet it intentionally uses several
-OOP techniques worth pointing out:
-
-| Pattern              | Where it lives                                                        |
-|----------------------|-----------------------------------------------------------------------|
-| **Singleton**        | `CardManager` (will be replaced by DI in upcoming refactor)           |
-| **Composite menu**   | `IMenu`/`IMenuItem` hierarchy in `Data/Managers/MenuManager/`         |
-| **Observer**         | `DeskOfCards.OnSortedDeskNotify` event tracking sort state            |
-| **Memento (scaffolded)** | `CardsMemento` + `CardCollectionHistory` — full undo/redo in roadmap |
-| **Strategy** (sort)  | Sort-by-id / sort-by-power / random-shuffle methods on the deck       |
-| **Custom enums + switch expr.** | `MenuPoint` resolved through pattern-matching `Binding`    |
-
-## Tech stack
-
-| Layer       | Library                                                                                  |
-|-------------|------------------------------------------------------------------------------------------|
-| Runtime     | .NET 10                                                                                  |
-| Logging     | [Serilog](https://serilog.net/) + Compact JSON formatter + ANSI Console sink             |
-| JSON        | [Newtonsoft.Json](https://www.newtonsoft.com/json) (System.Text.Json port in roadmap)    |
+```
+CardsTools/
+├── Program.cs                       Host.CreateApplicationBuilder composition root
+├── Hosting/
+│   └── ConsoleAppService.cs         BackgroundService driving the console UI
+├── Menu/
+│   └── MenuBuilder.cs               Fluent DSL on top of the menu framework
+├── Commands/
+│   ├── IDeckCommand.cs              Command pattern interface + base class
+│   ├── DeckCommands.cs              AddCard / RemoveCard / Clear / Sort / Shuffle
+│   └── CommandRunner.cs             Saves memento → applies command → rolls back on failure
+├── Persistence/
+│   ├── IDeckStorage.cs              Save / Load / ListSaved abstraction
+│   ├── JsonDeckStorage.cs           Filesystem impl + timestamped backups
+│   └── JsonContext.cs               System.Text.Json source-generated context
+├── Data/
+│   ├── Models/
+│   │   ├── Card.cs                  sealed record Card(Id, Name, Description, Power)
+│   │   └── DeckOfCards.cs           Domain model + OperationResult struct
+│   ├── Managers/
+│   │   ├── CardManager.cs           DI-managed; owns decks + per-deck histories
+│   │   └── MenuManager/             Hand-rolled console menu framework
+│   │       ├── IMenu.cs, IMenuItem.cs, Menu.cs, MenuItem.cs
+│   │       ├── Binding.cs           Keyboard → MenuPoint switch expression
+│   │       └── MenuPoint.cs, ArgumentActionExecutionEvent.cs
+│   └── Tools/
+│       ├── CardsMemento.cs          Immutable snapshot record
+│       ├── CardCollectionHistory.cs DeckHistory: two-stack Undo/Redo
+│       └── ValidationCard.cs        Tiny input helpers
+└── tests/
+    └── CardsTools.Tests/            xUnit + FluentAssertions
+```
 
 ## Quick start
 
@@ -56,55 +81,27 @@ dotnet restore
 dotnet run
 ```
 
-You will see the main menu — use `↑`/`↓` to navigate, `Enter` to select, `Esc` to go
-back, `Ctrl`+`C` to quit. Decks are persisted under `DeskCardSave/`.
-
-## Project layout
-
-```
-CardsTools/
-├── Program.cs                       Entry point — wires the main menu tree
-├── Data/
-│   ├── Managers/
-│   │   ├── CardManager.cs           Singleton; owns all decks, import/save flow
-│   │   ├── Keeper.cs                JSON persistence base class
-│   │   └── MenuManager/             Hand-rolled console menu framework
-│   │       ├── IMenu.cs, IMenuItem.cs
-│   │       ├── Menu.cs, MenuItem.cs
-│   │       ├── Binding.cs           Keyboard → MenuPoint mapping (switch expr.)
-│   │       ├── MenuPoint.cs
-│   │       └── ArgumentActionExecutionEvent.cs
-│   ├── Models/
-│   │   ├── Card.cs                  Single card entity
-│   │   └── DeskOfCards.cs           Deck = ordered Card[] + sort/random/limits
-│   └── Tools/
-│       ├── FileHelper.cs            Storage path resolution + backup folder
-│       ├── ValidationCard.cs        Tiny input validators
-│       ├── CardsMemento.cs          Memento (scaffolding for undo/redo)
-│       └── CardCollectionHistory.cs Memento history (scaffolding)
-├── Directory.Build.props
-├── CardsTools.csproj
-└── CardsTools.sln
-```
+Use `↑`/`↓` to navigate, `Enter` to select, `Esc` to go back, `Ctrl`+`C` to quit.
+Decks are persisted under `DeckCardSave/` with timestamped backups under
+`DeckCardSave/Backup/<deck>/`.
 
 ## Development
 
 ```bash
 dotnet format --verify-no-changes        # check style
 dotnet build --configuration Release     # build
-dotnet test                              # run tests (added in roadmap)
+dotnet test                              # 21 xUnit tests
 ```
 
-## Roadmap
+## Tech stack
 
-Planned upgrades that turn this from a sandbox into a "show me real C#" sample:
-
-- Replace the manual Singleton with **Microsoft.Extensions.Hosting** + DI.
-- Replace **Newtonsoft.Json** with **System.Text.Json** (source-generated context, AOT-friendly).
-- Introduce a **fluent `MenuBuilder` DSL** so menu trees are declared, not assembled in callbacks.
-- Promote each user action into a **Command object** to power real Undo/Redo via the existing Memento scaffolding.
-- Switch `Card` to a **sealed record**.
-- Add an **xUnit test project** covering deck invariants, history and the menu builder.
+| Layer        | Library                                                                                  |
+|--------------|------------------------------------------------------------------------------------------|
+| Runtime      | .NET 10                                                                                  |
+| Hosting / DI | [`Microsoft.Extensions.Hosting`](https://learn.microsoft.com/dotnet/core/extensions/generic-host) |
+| Logging      | [Serilog](https://serilog.net/) + `[LoggerMessage]` generators                           |
+| JSON         | `System.Text.Json` (source-generated context, AOT-friendly)                              |
+| Tests        | [xUnit](https://xunit.net/) + [FluentAssertions](https://fluentassertions.com/)          |
 
 ## License
 

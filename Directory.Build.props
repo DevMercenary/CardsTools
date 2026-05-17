@@ -4,8 +4,10 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <AnalysisLevel>latest</AnalysisLevel>
-    <InvariantGlobalization>false</InvariantGlobalization>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <NoWarn>$(NoWarn);CA1051;CA1305;CA1710;CA1716;CA1725;CA1819;CA1822;CA1848;CA1851;CA1859;CA1873;CA2211;CA2007;IDE0058</NoWarn>
   </PropertyGroup>
 
 </Project>

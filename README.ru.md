@@ -2,7 +2,7 @@
 
 # CardsTools
 
-**Консольное приложение для работы с игральными и гадальными картами**
+**Консольный менеджер колод — DI Host, Command pattern, реальный Memento undo/redo**
 
 [![CI](https://github.com/DevMercenary/CardsTools/actions/workflows/ci.yml/badge.svg)](https://github.com/DevMercenary/CardsTools/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -14,39 +14,65 @@
 
 ---
 
-Небольшое интерактивное консольное приложение, позволяющее создавать, редактировать и
-импортировать/экспортировать колоды карт. Изначально песочница для отработки ООП,
-позже выросло в портфолио-проект, показывающий ручной фреймворк меню,
-паттерн Memento (под будущий undo/redo) и логирование через Serilog.
+Маленькое интерактивное консольное приложение для создания, редактирования, сохранения и
+проигрывания колод игральных/гадальных карт. Изначально песочница для ООП, выросла
+в портфолио-проект, показывающий как ту же предметную область можно выразить чисто
+через DI, Command pattern, Memento и source-generated API.
 
-## Что умеет
+## Что показано
 
-- Создавать, переименовывать и удалять колоды карт.
-- Добавлять, удалять, выводить и сортировать карты в колоде (по id, по силе, случайно).
-- Сохранять колоды на диск в JSON + автоматический бэкап c timestamp.
-- Импортировать ранее сохранённые колоды (с авто-переименованием при конфликте).
-- Управлять всем через многоуровневое меню с клавиатурной навигацией.
+- **Generic Host + DI** — `Host.CreateApplicationBuilder` c полным разрешением через
+  контейнер; никаких ручных Singleton.
+- **`IHostedService`** ведёт консольный цикл с кооперативным завершением по Ctrl-C.
+- **Декларативный DSL для меню** — `MenuBuilder.Root(...)` собирает дерево меню
+  fluent-стилем поверх существующего фреймворка `IMenu`/`IMenuItem`.
+- **Command pattern** — каждая деструктивная операция (`AddCardCommand`,
+  `RemoveCardCommand`, `SortByPowerCommand`, …) реализует `IDeckCommand` и проходит
+  через `CommandRunner`, который снимает memento до применения.
+- **Реальный Undo/Redo через Memento** — `DeckHistory` (две стопки) позволяет ходить
+  туда-сюда по правкам пользователя; неуспешные команды откатывают свой memento сами.
+- **Сериализация через `System.Text.Json` source-generator** — никакой рефлексии в
+  runtime, AOT-friendly через `[JsonSerializable]` + `JsonSerializerContext`.
+- **`[LoggerMessage]` source generator** для бессаловских структурированных логов.
+- **Sealed records** (`Card`, `CardsMemento`, `DeckSnapshot`) — иммутабельность с
+  инвариантами.
+- **xUnit + FluentAssertions** тесты (21 шт.: инварианты колоды, история,
+  командный раннер, менеджер и menu builder).
 
-## Архитектура и паттерны
+## Структура проекта
 
-Кода немного, но в нём специально использованы заметные ООП-приёмы:
-
-| Паттерн                  | Где он живёт                                                            |
-|--------------------------|-------------------------------------------------------------------------|
-| **Singleton**            | `CardManager` (заменим на DI в ближайшем рефакторинге)                  |
-| **Composite-меню**       | Иерархия `IMenu`/`IMenuItem` в `Data/Managers/MenuManager/`             |
-| **Observer**             | Событие `DeskOfCards.OnSortedDeskNotify`                                |
-| **Memento (заготовка)**  | `CardsMemento` + `CardCollectionHistory` — undo/redo в roadmap          |
-| **Strategy (сортировка)**| Sort-by-id / sort-by-power / random-shuffle на уровне колоды            |
-| **Pattern-matching**     | `Binding.ProcessAnswer` через switch-expression                         |
-
-## Технологический стек
-
-| Слой        | Библиотека                                                                               |
-|-------------|------------------------------------------------------------------------------------------|
-| Runtime     | .NET 10                                                                                  |
-| Логирование | [Serilog](https://serilog.net/) + Compact JSON formatter + ANSI Console sink             |
-| JSON        | [Newtonsoft.Json](https://www.newtonsoft.com/json) (порт на System.Text.Json — в roadmap)|
+```
+CardsTools/
+├── Program.cs                       Composition root c Host.CreateApplicationBuilder
+├── Hosting/
+│   └── ConsoleAppService.cs         BackgroundService — UI цикл
+├── Menu/
+│   └── MenuBuilder.cs               Fluent DSL поверх меню-фреймворка
+├── Commands/
+│   ├── IDeckCommand.cs              Интерфейс + базовый класс паттерна
+│   ├── DeckCommands.cs              AddCard / RemoveCard / Clear / Sort / Shuffle
+│   └── CommandRunner.cs             Сохранить memento → применить → откатить при ошибке
+├── Persistence/
+│   ├── IDeckStorage.cs              Save / Load / ListSaved абстракция
+│   ├── JsonDeckStorage.cs           Реализация на ФС + timestamp-бэкапы
+│   └── JsonContext.cs               System.Text.Json source-generated context
+├── Data/
+│   ├── Models/
+│   │   ├── Card.cs                  sealed record Card(Id, Name, Description, Power)
+│   │   └── DeckOfCards.cs           Доменная модель + OperationResult struct
+│   ├── Managers/
+│   │   ├── CardManager.cs           DI-managed; владеет колодами + per-deck историями
+│   │   └── MenuManager/             Ручной фреймворк консольного меню
+│   │       ├── IMenu.cs, IMenuItem.cs, Menu.cs, MenuItem.cs
+│   │       ├── Binding.cs           Клавиатура → MenuPoint switch-expression
+│   │       └── MenuPoint.cs, ArgumentActionExecutionEvent.cs
+│   └── Tools/
+│       ├── CardsMemento.cs          Иммутабельный snapshot-record
+│       ├── CardCollectionHistory.cs DeckHistory: двустопочный Undo/Redo
+│       └── ValidationCard.cs        Маленькие input-валидаторы
+└── tests/
+    └── CardsTools.Tests/            xUnit + FluentAssertions
+```
 
 ## Быстрый старт
 
@@ -55,56 +81,26 @@ dotnet restore
 dotnet run
 ```
 
-Появится главное меню — `↑`/`↓` навигация, `Enter` выбор, `Esc` назад,
-`Ctrl`+`C` выход. Колоды сохраняются в папке `DeskCardSave/`.
-
-## Структура проекта
-
-```
-CardsTools/
-├── Program.cs                       Точка входа — сборка дерева главного меню
-├── Data/
-│   ├── Managers/
-│   │   ├── CardManager.cs           Singleton; владеет всеми колодами, импорт/сохранение
-│   │   ├── Keeper.cs                База для JSON-персистентности
-│   │   └── MenuManager/             Ручной фреймворк консольного меню
-│   │       ├── IMenu.cs, IMenuItem.cs
-│   │       ├── Menu.cs, MenuItem.cs
-│   │       ├── Binding.cs           Клавиатура → MenuPoint (switch expr.)
-│   │       ├── MenuPoint.cs
-│   │       └── ArgumentActionExecutionEvent.cs
-│   ├── Models/
-│   │   ├── Card.cs                  Сущность карты
-│   │   └── DeskOfCards.cs           Колода = упорядоченный Card[] + сортировка/лимиты
-│   └── Tools/
-│       ├── FileHelper.cs            Пути хранилища + папка бэкапов
-│       ├── ValidationCard.cs        Маленькие валидаторы ввода
-│       ├── CardsMemento.cs          Memento (заготовка для undo/redo)
-│       └── CardCollectionHistory.cs История memento (заготовка)
-├── Directory.Build.props
-├── CardsTools.csproj
-└── CardsTools.sln
-```
+`↑`/`↓` — навигация, `Enter` — выбор, `Esc` — назад, `Ctrl`+`C` — выход. Колоды
+сохраняются в `DeckCardSave/` c timestamp-бэкапами в `DeckCardSave/Backup/<deck>/`.
 
 ## Разработка
 
 ```bash
 dotnet format --verify-no-changes        # проверка стиля
 dotnet build --configuration Release     # сборка
-dotnet test                              # тесты (в roadmap)
+dotnet test                              # 21 xUnit-тест
 ```
 
-## Roadmap
+## Технологический стек
 
-Что превратит этот песочный проект в полноценный «настоящий C#»-образец:
-
-- Замена ручного Singleton на **Microsoft.Extensions.Hosting** + DI.
-- Замена **Newtonsoft.Json** на **System.Text.Json** (source-generated context, AOT-friendly).
-- Введение **fluent `MenuBuilder` DSL** — меню декларативно, а не через ручные колбэки.
-- Каждое пользовательское действие — отдельный **Command object** для реального
-  Undo/Redo через готовую заготовку Memento.
-- Перевод `Card` в **sealed record**.
-- **xUnit-проект** тестов на инварианты колоды, историю и menu builder.
+| Слой         | Библиотека                                                                                |
+|--------------|-------------------------------------------------------------------------------------------|
+| Runtime      | .NET 10                                                                                   |
+| Hosting / DI | [`Microsoft.Extensions.Hosting`](https://learn.microsoft.com/dotnet/core/extensions/generic-host) |
+| Логирование  | [Serilog](https://serilog.net/) + `[LoggerMessage]` source-generators                     |
+| JSON         | `System.Text.Json` (source-generated context, AOT-friendly)                               |
+| Тесты        | [xUnit](https://xunit.net/) + [FluentAssertions](https://fluentassertions.com/)           |
 
 ## Лицензия
 

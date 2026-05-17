@@ -1,14 +1,9 @@
 using CardsTools.Data.Models;
 
-namespace CardsTools.Data.Tools
-{
-    internal class CardsMemento
-    {
-        public List<Card> Cards { get; private set; }
+namespace CardsTools.Data.Tools;
 
-        public CardsMemento(List<Card> cards)
-        {
-            Cards = cards;
-        }
-    }
-}
+/// <summary>
+/// Immutable snapshot of a deck's contents. Created by the deck before any
+/// destructive operation so a <see cref="DeckHistory"/> can roll it back.
+/// </summary>
+public sealed record CardsMemento(IReadOnlyList<Card> Cards);

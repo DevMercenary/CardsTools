@@ -1,11 +1,11 @@
-namespace CardsTools.Data.Models
-{
-    public class Card
-    {
-        public int Id { get; set; }
-        public string? Name { get; set; }
-        public string? Description { get; set; }
-        public int CardPower { get; set; }
+namespace CardsTools.Data.Models;
 
-    }
+/// <summary>
+/// Immutable card. Decks copy cards around (sort, shuffle) but never mutate
+/// a card once it has been added — every mutation produces a new record.
+/// </summary>
+public sealed record Card(int Id, string Name, string Description, int Power)
+{
+    public override string ToString() =>
+        $"#{Id}  {Name}  ({Power})  — {Description}";
 }

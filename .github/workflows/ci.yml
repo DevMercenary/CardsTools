@@ -24,7 +24,7 @@ jobs:
         run: dotnet restore
 
       - name: Format check
-        run: dotnet format ./CardsTools.csproj --verify-no-changes --no-restore
+        run: dotnet format ./CardsTools.sln --verify-no-changes --no-restore
 
       - name: Build
         run: dotnet build --configuration Release --no-restore
